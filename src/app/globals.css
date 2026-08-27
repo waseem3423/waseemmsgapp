@@ -1,0 +1,119 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 37 24% 91%;
+    /* #efeae2 WhatsApp Light Chat BG */
+    --foreground: 204 30% 12%;
+    --card: 0 0% 100%;
+    /* #ffffff Sidebar & Header */
+    --card-foreground: 204 30% 12%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 204 30% 12%;
+    --primary: 167 100% 33%;
+    /* #00a884 WhatsApp Brand Green */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 160 15% 94%;
+    /* #f0f2f5 */
+    --secondary-foreground: 204 30% 12%;
+    --muted: 160 15% 93%;
+    --muted-foreground: 204 10% 45%;
+    --accent: 167 100% 33%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 210 15% 88%;
+    --input: 210 15% 88%;
+    --ring: 167 100% 33%;
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    --background: 204 32% 10%;
+    /* #111b21 WhatsApp Dark Outer BG */
+    --foreground: 0 0% 95%;
+    --card: 204 23% 16%;
+    /* #202c33 Sidebar & Headers */
+    --card-foreground: 0 0% 95%;
+    --popover: 204 23% 16%;
+    --popover-foreground: 0 0% 95%;
+    --primary: 167 100% 33%;
+    /* #00a884 WhatsApp Green */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 204 20% 20%;
+    /* #222e35 */
+    --secondary-foreground: 0 0% 95%;
+    --muted: 204 18% 22%;
+    /* #2a3942 */
+    --muted-foreground: 204 12% 70%;
+    --accent: 167 100% 33%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 62.8% 40.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 204 15% 22%;
+    /* #222d34 */
+    --input: 204 15% 22%;
+    --ring: 167 100% 33%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased selection:bg-primary/30;
+  }
+}
+
+/* WhatsApp Specific Custom Utilities */
+.whatsapp-chat-pattern-dark {
+  background-color: #0b141a;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 0);
+  background-size: 24px 24px;
+}
+
+.whatsapp-chat-pattern-light {
+  background-color: #efeae2;
+  background-image: radial-gradient(rgba(0, 0, 0, 0.04) 1px, transparent 0);
+  background-size: 24px 24px;
+}
+
+/* Scrollbar Customization */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(140, 140, 140, 0.3);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(140, 140, 140, 0.5);
+}
+
+/* Audio Wave Animation */
+@keyframes pulse-wave {
+
+  0%,
+  100% {
+    transform: scaleY(0.4);
+  }
+
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+.animate-wave-bar {
+  animation: pulse-wave 1.2s ease-in-out infinite;
+}
