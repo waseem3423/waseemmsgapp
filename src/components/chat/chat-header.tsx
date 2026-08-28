@@ -1,6 +1,6 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { MoreVertical, Phone, Video, ArrowLeft, Users, MessageSquare, BellOff, XCircle, Trash2, LogOut, Search, Plus } from 'lucide-react';
+import { MoreVertical, Phone, Video, ArrowLeft, Users, MessageSquare, BellOff, XCircle, Trash2, LogOut, Search, Plus, FolderOpen } from 'lucide-react';
 import type { Chat } from "@/lib/types";
 import { useAuth } from '@/hooks/use-auth';
 import { formatRelative, parseISO } from 'date-fns';
@@ -29,6 +29,8 @@ interface ChatHeaderProps {
   onInitiateCall: (chatId: string, type?: 'audio' | 'video') => void;
   onClearChat: (chatId: string) => void;
   onExitGroup: (chatId: string) => void;
+  onToggleSearch?: () => void;
+  onToggleMediaSidebar?: () => void;
 }
 
 const formatLastSeen = (lastSeen?: string) => {
@@ -41,7 +43,7 @@ const formatLastSeen = (lastSeen?: string) => {
     }
 }
 
-export default function ChatHeader({ chat, onBack, onOpenInfo, onInitiateCall, onClearChat, onExitGroup }: ChatHeaderProps) {
+export default function ChatHeader({ chat, onBack, onOpenInfo, onInitiateCall, onClearChat, onExitGroup, onToggleSearch, onToggleMediaSidebar }: ChatHeaderProps) {
   const { user } = useAuth();
   const contact = chat.contact;
   const isGroup = chat.isGroup;
@@ -61,7 +63,7 @@ export default function ChatHeader({ chat, onBack, onOpenInfo, onInitiateCall, o
   } else if (isGroup) {
     headerStatus = `${chat.userIds?.length || 0} members`;
   } else if (isOnline) {
-    headerStatus = 'online';
+    headerStatus = 'Active now';
   } else {
     headerStatus = formatLastSeen(contact?.lastSeen) || '';
   }
@@ -134,7 +136,8 @@ export default function ChatHeader({ chat, onBack, onOpenInfo, onInitiateCall, o
           variant="ghost" 
           size="icon" 
           className="rounded-full h-9 w-9 text-muted-foreground hover:text-foreground hover:bg-muted/60"
-          title="Search"
+          onClick={onToggleSearch}
+          title="Search in Chat"
         >
           <Search className="h-4.5 w-4.5" />
         </Button>
@@ -143,10 +146,10 @@ export default function ChatHeader({ chat, onBack, onOpenInfo, onInitiateCall, o
           variant="ghost" 
           size="icon" 
           className="rounded-full h-9 w-9 text-muted-foreground hover:text-foreground hover:bg-muted/60"
-          onClick={onOpenInfo}
-          title="Search in chat"
+          onClick={onToggleMediaSidebar}
+          title="Shared Media & Files"
         >
-          <Search className="h-4.5 w-4.5" />
+          <FolderOpen className="h-4.5 w-4.5" />
         </Button>
         
         <DropdownMenu>

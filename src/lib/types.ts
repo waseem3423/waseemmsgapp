@@ -11,8 +11,8 @@ export interface User {
   fcmTokens?: string[];
 }
 
-export type MessageStatus = 'sent' | 'delivered' | 'read';
-export type MessageType = 'text' | 'audio' | 'image' | 'document' | 'gif';
+export type MessageStatus = 'sending' | 'sent' | 'delivered' | 'read' | 'failed';
+export type MessageType = 'text' | 'audio' | 'image' | 'video' | 'document' | 'gif';
 
 export interface Message {
   id: string;
@@ -21,11 +21,13 @@ export interface Message {
   caption?: string; // For image/video messages
   fileName?: string; // For document messages
   fileSize?: number; // For document messages
+  progress?: number; // Upload percentage (0 to 100)
   timestamp: string; // Stored as ISO string on client
   senderId: string;
   status: MessageStatus;
   readTimestamp?: string; // ISO string
   isStarred?: boolean;
+  isPinned?: boolean;
   isForwarded?: boolean;
   replyTo?: {
     id: string;

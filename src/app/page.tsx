@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useRef } from "react";
 import { collection, query, where, getDocs, onSnapshot, doc, addDoc, serverTimestamp, orderBy, getDoc, updateDoc, writeBatch, arrayUnion, arrayRemove, deleteField, setDoc, FieldValue, increment } from "firebase/firestore";
@@ -19,16 +19,24 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { uploadFileWithProgress } from "@/lib/upload-client";
+import { saveMediaBlob } from "@/lib/indexeddb-cache";
+import { playSentPopSound, playReceivedChimeSound } from "@/lib/whatsapp-sounds";
 
-// Public STUN servers provided by Google.
-const configuration = {
+// WebRTC STUN & TURN Relay Server Configuration for 100% reliable calls
+const configuration: RTCConfiguration = {
   iceServers: [
+    { urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302', 'stun:stun3.l.google.com:19302', 'stun:stun4.l.google.com:19302'] },
+    { urls: 'stun:global.stun.twilio.com:3478' },
     {
       urls: [
-        'stun:stun1.l.google.com:19302',
-        'stun:stun2.l.google.com:19302',
+        'turn:openrelay.metered.ca:80',
+        'turn:openrelay.metered.ca:443',
+        'turn:openrelay.metered.ca:443?transport=tcp'
       ],
-    },
+      username: 'openrelay',
+      credential: 'openrelay'
+    }
   ],
   iceCandidatePoolSize: 10,
 };
@@ -41,7 +49,7 @@ const AnnouncementBanner = () => {
     }
 
     return (
-        <div className="bg-primary text-primary-foreground p-2 text-center text-sm flex items-center justify-center relative">
+        <div className="text-white p-2 text-center text-sm flex items-center justify-center relative btn-liquid">
             <Tv className="h-4 w-4 mr-2" />
             <span>{announcementConfig.announcement.text}</span>
             <button onClick={() => setVisible(false)} className="absolute right-2 top-1/2 -translate-y-1/2">
@@ -180,46 +188,52 @@ export default function Home() {
     if (!chat || !user || chat.isGroup || !chat.contact) return;
 
     const isVideo = type === 'video';
+    const mediaConstraints: MediaStreamConstraints = {
+      audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+      video: isVideo ? { width: { max: 1280 }, height: { max: 720 }, frameRate: { max: 30 } } : false,
+    };
+
     try {
-        localStream.current = await navigator.mediaDevices.getUserMedia({ audio: true, video: isVideo });
+      localStream.current = await navigator.mediaDevices.getUserMedia(mediaConstraints);
     } catch (error) {
-        if (isVideo) {
-          try {
-            localStream.current = await navigator.mediaDevices.getUserMedia({ audio: true });
-          } catch (err) {
-            console.error("Error accessing media devices:", err);
-            toast({
-                title: "Media Error",
-                description: "Microphone/Camera not found or access denied.",
-                variant: "destructive",
-            });
-            return;
-          }
-        } else {
-          console.error("Error accessing microphone:", error);
+      if (isVideo) {
+        try {
+          localStream.current = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+        } catch (err) {
+          console.error("Error accessing video/audio devices:", err);
           toast({
-              title: "Microphone Error",
-              description: "Microphone not found or access denied.",
-              variant: "destructive",
+            title: "Media Error",
+            description: "Microphone/Camera not found or access denied.",
+            variant: "destructive",
           });
           return;
         }
+      } else {
+        console.error("Error accessing microphone:", error);
+        toast({
+          title: "Microphone Error",
+          description: "Microphone not found or access denied.",
+          variant: "destructive",
+        });
+        return;
+      }
     }
 
     pc.current = new RTCPeerConnection(configuration);
     registerPeerConnectionListeners();
     
     remoteStream.current = new MediaStream();
+    setRemoteMediaStream(remoteStream.current);
     
     localStream.current.getTracks().forEach(track => {
-        pc.current!.addTrack(track, localStream.current!);
+      pc.current!.addTrack(track, localStream.current!);
     });
 
     pc.current.ontrack = event => {
       console.log("WebRTC received remote track:", event.track.kind);
       if (event.streams && event.streams[0]) {
         remoteStream.current = event.streams[0];
-        setRemoteMediaStream(event.streams[0]);
+        setRemoteMediaStream(new MediaStream(event.streams[0].getTracks()));
       } else {
         if (!remoteStream.current) {
           remoteStream.current = new MediaStream();
@@ -264,38 +278,44 @@ export default function Home() {
     registerPeerConnectionListeners();
     
     const isVideo = callState.callType === 'video';
+    const mediaConstraints: MediaStreamConstraints = {
+      audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+      video: isVideo ? { width: { max: 1280 }, height: { max: 720 }, frameRate: { max: 30 } } : false,
+    };
+
     try {
-        try {
-          localStream.current = await navigator.mediaDevices.getUserMedia({ audio: true, video: isVideo });
-        } catch (err) {
-          if (isVideo) {
-            localStream.current = await navigator.mediaDevices.getUserMedia({ audio: true });
-          } else {
-            throw err;
-          }
+      try {
+        localStream.current = await navigator.mediaDevices.getUserMedia(mediaConstraints);
+      } catch (err) {
+        if (isVideo) {
+          localStream.current = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+        } else {
+          throw err;
         }
+      }
         
-        remoteStream.current = new MediaStream();
+      remoteStream.current = new MediaStream();
+      setRemoteMediaStream(remoteStream.current);
 
-        if (localStream.current) {
-          localStream.current.getTracks().forEach(track => {
-            pc.current!.addTrack(track, localStream.current!);
-          });
-        }
+      if (localStream.current) {
+        localStream.current.getTracks().forEach(track => {
+          pc.current!.addTrack(track, localStream.current!);
+        });
+      }
 
-        pc.current.ontrack = event => {
-          console.log("WebRTC received remote track:", event.track.kind);
-          if (event.streams && event.streams[0]) {
-            remoteStream.current = event.streams[0];
-            setRemoteMediaStream(event.streams[0]);
-          } else {
-            if (!remoteStream.current) {
-              remoteStream.current = new MediaStream();
-            }
-            remoteStream.current.addTrack(event.track);
-            setRemoteMediaStream(new MediaStream(remoteStream.current.getTracks()));
+      pc.current.ontrack = event => {
+        console.log("WebRTC received remote track:", event.track.kind);
+        if (event.streams && event.streams[0]) {
+          remoteStream.current = event.streams[0];
+          setRemoteMediaStream(new MediaStream(event.streams[0].getTracks()));
+        } else {
+          if (!remoteStream.current) {
+            remoteStream.current = new MediaStream();
           }
-        };
+          remoteStream.current.addTrack(event.track);
+          setRemoteMediaStream(new MediaStream(remoteStream.current.getTracks()));
+        }
+      };
         
         // Listen for local ICE candidates
         const candidatesCollection = collection(db, 'calls', callState.id, 'receiverCandidates');
@@ -567,7 +587,7 @@ export default function Home() {
                 const senderName = targetChat?.isGroup ? targetChat.groupName : (targetChat?.contact?.name || 'Contact');
                 toast({
                   title: `Message from ${senderName}`,
-                  description: msgData.content || (msgData.type === 'image' ? '📷 Photo' : '🎵 Media'),
+                  description: msgData.content || (msgData.type === 'image' ? 'ðŸ“· Photo' : 'ðŸŽµ Media'),
                 });
               }
             }
@@ -595,6 +615,7 @@ export default function Home() {
       newMessage.replyTo = replyTo;
     }
     await addDoc(messagesCol, newMessage);
+    playSentPopSound();
 
     const chatRef = doc(db, "chats", chatId);
     await updateDoc(chatRef, {
@@ -633,7 +654,7 @@ export default function Home() {
 
     const chatRef = doc(db, "chats", chatId);
     await updateDoc(chatRef, {
-      lastMessage: { text: '📷 GIF', timestamp: serverTimestamp() },
+      lastMessage: { text: 'ðŸ“· GIF', timestamp: serverTimestamp() },
       unreadCount: increment(1)
     });
   };
@@ -641,67 +662,60 @@ export default function Home() {
   const handleSendFileMessage = async (chatId: string, file: File, type: MessageType, caption?: string) => {
     if (!user) return;
 
-    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-    const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+    // 1. Create a local preview blob URL for instant 0ms bubble rendering
+    const tempLocalUrl = URL.createObjectURL(file);
+    await saveMediaBlob(tempLocalUrl, file);
 
-    if (!cloudName || !uploadPreset) {
-      console.error("Cloudinary environment variables are not set.");
-      toast({
-        title: "Configuration Error",
-        description: "File upload is not configured. Please contact support.",
-        variant: "destructive",
-      });
-      return;
+    let messageContent = '';
+    if (type === 'audio') {
+      messageContent = 'ðŸŽ¤ Voice message';
+    } else if (type === 'image') {
+      messageContent = caption || 'ðŸ–¼ï¸ Image';
+    } else if (type === 'video') {
+      messageContent = caption || 'ðŸŽ¥ Video';
+    } else if (type === 'document') {
+      messageContent = `ðŸ“„ ${file.name}`;
     }
 
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('upload_preset', uploadPreset);
+    const pendingMessageData: any = {
+      type,
+      content: tempLocalUrl,
+      senderId: user.id,
+      timestamp: serverTimestamp(),
+      status: 'sending',
+    };
+
+    if (caption) pendingMessageData.caption = caption;
+    if (type === 'document') {
+      pendingMessageData.fileName = file.name;
+      pendingMessageData.fileSize = file.size;
+    }
+
+    // 2. Instantly add message to Firestore so sender & receiver see loading bubble
+    const messagesCol = collection(db, "chats", chatId, "messages");
+    const docRef = await addDoc(messagesCol, pendingMessageData);
 
     try {
-      const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`, {
-        method: 'POST',
-        body: formData,
+      const data = await uploadFileWithProgress(file, (percent) => {
+        updateDoc(doc(db, "chats", chatId, "messages", docRef.id), {
+          progress: percent
+        }).catch(() => {});
       });
 
-      if (!response.ok) {
-        throw new Error('Cloudinary upload failed');
-      }
+      const downloadURL = data.url;
+      await saveMediaBlob(downloadURL, file);
 
-      const data = await response.json();
-      const downloadURL = data.secure_url;
-      
-      const messageData: any = {
-        type,
+      // 3. Update Firestore with permanent GitHub URL and 'sent' status
+      await updateDoc(doc(db, "chats", chatId, "messages", docRef.id), {
         content: downloadURL,
-        senderId: user.id,
-        timestamp: serverTimestamp(),
         status: 'sent',
-      };
-      
-      if (caption) {
-        messageData.caption = caption;
-      }
-      
-      let messageContent = '';
-      if (type === 'audio') {
-        messageContent = '🎤 Voice message';
-      } else if (type === 'image') {
-        messageContent = caption || '🖼️ Image';
-      } else if (type === 'document') {
-        messageContent = `📄 ${file.name}`;
-        messageData.fileName = file.name;
-        messageData.fileSize = file.size;
-      }
-      
-      const messagesCol = collection(db, "chats", chatId, "messages");
-      await addDoc(messagesCol, messageData);
+        progress: 100
+      });
 
       await updateDoc(doc(db, "chats", chatId), {
         lastMessage: { text: messageContent, timestamp: serverTimestamp() },
         unreadCount: increment(1)
       });
-
 
       const currentChat = chats.find(c => c.id === chatId);
       if (currentChat) {
@@ -717,11 +731,15 @@ export default function Home() {
             });
           }
       }
-    } catch (error) {
-      console.error("Error uploading file to Cloudinary:", error);
+    } catch (error: any) {
+      console.error("Error uploading file:", error);
+      await updateDoc(doc(db, "chats", chatId, "messages", docRef.id), {
+        status: 'failed',
+      }).catch(() => {});
+
       toast({
         title: "Upload Failed",
-        description: `Could not send your ${type}. Please try again.`,
+        description: `Could not send your ${type}: ${error.message || 'Please try again.'}`,
         variant: "destructive",
       });
     }
@@ -732,7 +750,7 @@ export default function Home() {
     
     if (contact.email === user.email) {
       toast({
-        title: "🤔 Cannot Add Yourself",
+        title: "ðŸ¤” Cannot Add Yourself",
         description: "You can't start a chat with yourself.",
         variant: "destructive",
       });
@@ -745,7 +763,7 @@ export default function Home() {
     let contactUser: User;
     if (querySnapshot.empty) {
       toast({
-        title: "🤷‍♀️ User Not Found",
+        title: "ðŸ¤·â€â™€ï¸ User Not Found",
         description: "No user with this email exists. Please check the email and try again.",
         variant: "destructive",
       });
@@ -989,6 +1007,17 @@ export default function Home() {
       toast({ title: "Error", description: "Could not update messages.", variant: "destructive" });
     }
   };
+
+  const handleTogglePinMessage = async (chatId: string, messageId: string, pin: boolean) => {
+    const messageRef = doc(db, "chats", chatId, "messages", messageId);
+    try {
+      await updateDoc(messageRef, { isPinned: pin });
+      toast({ title: pin ? "Message Pinned to Top" : "Message Unpinned" });
+    } catch (error) {
+      console.error("Error pinning message:", error);
+      toast({ title: "Error", description: "Could not update pin status.", variant: "destructive" });
+    }
+  };
   
   const handleDeleteMessages = async (chatId: string, messageIds: string[]) => {
     const batch = writeBatch(db);
@@ -1016,11 +1045,11 @@ export default function Home() {
               if (message.type === 'text') {
                 newContentText = message.content;
               } else if (message.type === 'audio') {
-                newContentText = '🎤 Voice message';
+                newContentText = 'ðŸŽ¤ Voice message';
               } else if (message.type === 'image' || message.type === 'gif') {
-                newContentText = message.caption || '🖼️ Media';
+                newContentText = message.caption || 'ðŸ–¼ï¸ Media';
               } else if (message.type === 'document') {
-                newContentText = `📄 ${message.fileName || 'Document'}`;
+                newContentText = `ðŸ“„ ${message.fileName || 'Document'}`;
               }
 
               // Create a new object for the new message, excluding the original ID
@@ -1165,24 +1194,24 @@ export default function Home() {
         <AnnouncementBanner />
         <div className="flex flex-1 overflow-hidden">
             {/* WhatsApp Left Navigation Rail */}
-            <div className="hidden md:flex flex-col items-center justify-between w-16 bg-card border-r border-border/80 py-3 shrink-0 z-20 shadow-sm">
+            <div className="hidden md:flex flex-col items-center justify-between w-16 py-3 shrink-0 z-20 liquid-glass-sidebar">
                 <div className="flex flex-col items-center gap-4">
                     <div className="relative group cursor-pointer" onClick={() => router.push('/profile')}>
-                        <Avatar className="h-9 w-9 border border-primary/30 ring-2 ring-primary/10">
+                        <Avatar className="h-9 w-9 ring-2 ring-white shadow-md">
                             <AvatarImage src={user?.avatar} alt={user?.name} />
                             <AvatarFallback className="bg-primary/10 text-primary font-bold text-xs">
                                 {user?.name?.charAt(0) || 'U'}
                             </AvatarFallback>
                         </Avatar>
-                        <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-500 border-2 border-card" />
+                        <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-500 border-2 border-white shadow-sm" />
                     </div>
 
-                    <div className="w-8 h-[1px] bg-border/60 my-1" />
+                    <div className="w-8 h-[1px] bg-black/8 my-1" />
 
                     <Button 
                         variant="ghost" 
                         size="icon" 
-                        className="rounded-xl h-10 w-10 text-primary bg-primary/15 hover:bg-primary/20 relative"
+                        className="rounded-xl h-10 w-10 relative liquid-nav-active"
                         title="Chats"
                     >
                         <MessageSquare className="h-5 w-5 fill-primary/20 text-primary" />
@@ -1194,7 +1223,7 @@ export default function Home() {
                     <Button 
                         variant="ghost" 
                         size="icon" 
-                        className="rounded-xl h-10 w-10 text-muted-foreground hover:text-foreground hover:bg-secondary"
+                        className="rounded-xl h-10 w-10 text-slate-500 hover:text-teal-600 hover:bg-teal-50 transition-all"
                         title="Status Updates"
                     >
                         <CircleDot className="h-5 w-5" />
@@ -1203,7 +1232,7 @@ export default function Home() {
                     <Button 
                         variant="ghost" 
                         size="icon" 
-                        className="rounded-xl h-10 w-10 text-muted-foreground hover:text-foreground hover:bg-secondary"
+                        className="rounded-xl h-10 w-10 text-slate-500 hover:text-teal-600 hover:bg-teal-50 transition-all"
                         title="Communities"
                     >
                         <Users className="h-5 w-5" />
@@ -1215,7 +1244,7 @@ export default function Home() {
                         <Button 
                             variant="ghost" 
                             size="icon" 
-                            className="rounded-xl h-10 w-10 text-muted-foreground hover:text-foreground hover:bg-secondary"
+                            className="rounded-xl h-10 w-10 text-slate-500 hover:text-teal-600 hover:bg-teal-50 transition-all"
                             title="Settings"
                         >
                             <Settings className="h-5 w-5" />
@@ -1226,7 +1255,7 @@ export default function Home() {
                         variant="ghost" 
                         size="icon" 
                         onClick={logout}
-                        className="rounded-xl h-10 w-10 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                        className="rounded-xl h-10 w-10 text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all"
                         title="Log out"
                     >
                         <LogOut className="h-5 w-5" />
@@ -1236,7 +1265,7 @@ export default function Home() {
 
             {/* Contacts Sidebar List */}
             <div className={cn(
-                "w-full md:w-[380px] border-r border-border/80 flex-col bg-card flex shrink-0 transition-all",
+                "w-full md:w-[380px] flex-col flex shrink-0 transition-all liquid-glass-sidebar",
                 selectedChatId ? "hidden md:flex" : "flex"
             )}>
                 <ContactList
@@ -1258,7 +1287,7 @@ export default function Home() {
 
             {/* Active Chat Window or Welcome Screen */}
             <div className={cn(
-                "flex-1 flex flex-col bg-background min-w-0 transition-all",
+                "flex-1 flex flex-col min-w-0 transition-all chat-bg",
                 !selectedChatId ? "hidden md:flex" : "flex"
             )}>
                 {selectedChat ? (
@@ -1276,6 +1305,7 @@ export default function Home() {
                     onExitGroup={handleExitGroup}
                     onDeleteChat={handleDeleteChat}
                     onToggleStarMessages={handleToggleStarMessages}
+                    onTogglePinMessage={handleTogglePinMessage}
                     onDeleteMessages={handleDeleteMessages}
                     onForwardMessages={handleForwardMessages}
                     onInitiateCall={initiateCall}
@@ -1297,3 +1327,4 @@ export default function Home() {
     </div>
   );
 }
+

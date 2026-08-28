@@ -1,119 +1,297 @@
+﻿@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 37 24% 91%;
-    /* #efeae2 WhatsApp Light Chat BG */
-    --foreground: 204 30% 12%;
+    --background: 210 40% 97%;
+    --foreground: 220 25% 14%;
     --card: 0 0% 100%;
-    /* #ffffff Sidebar & Header */
-    --card-foreground: 204 30% 12%;
+    --card-foreground: 220 25% 14%;
     --popover: 0 0% 100%;
-    --popover-foreground: 204 30% 12%;
-    --primary: 167 100% 33%;
-    /* #00a884 WhatsApp Brand Green */
+    --popover-foreground: 220 25% 14%;
+    --primary: 168 72% 40%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 160 15% 94%;
-    /* #f0f2f5 */
-    --secondary-foreground: 204 30% 12%;
-    --muted: 160 15% 93%;
-    --muted-foreground: 204 10% 45%;
-    --accent: 167 100% 33%;
+    --secondary: 210 30% 94%;
+    --secondary-foreground: 220 20% 30%;
+    --muted: 210 25% 92%;
+    --muted-foreground: 215 15% 52%;
+    --accent: 168 72% 40%;
     --accent-foreground: 0 0% 100%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 210 15% 88%;
-    --input: 210 15% 88%;
-    --ring: 167 100% 33%;
-    --radius: 0.75rem;
+    --destructive: 0 70% 55%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 214 25% 88%;
+    --input: 210 30% 94%;
+    --ring: 168 72% 40%;
+    --radius: 1rem;
   }
 
   .dark {
-    --background: 204 32% 10%;
-    /* #111b21 WhatsApp Dark Outer BG */
-    --foreground: 0 0% 95%;
-    --card: 204 23% 16%;
-    /* #202c33 Sidebar & Headers */
-    --card-foreground: 0 0% 95%;
-    --popover: 204 23% 16%;
-    --popover-foreground: 0 0% 95%;
-    --primary: 167 100% 33%;
-    /* #00a884 WhatsApp Green */
+    --background: 210 40% 97%;
+    --foreground: 220 25% 14%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 25% 14%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 25% 14%;
+    --primary: 168 72% 40%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 204 20% 20%;
-    /* #222e35 */
-    --secondary-foreground: 0 0% 95%;
-    --muted: 204 18% 22%;
-    /* #2a3942 */
-    --muted-foreground: 204 12% 70%;
-    --accent: 167 100% 33%;
+    --secondary: 210 30% 94%;
+    --secondary-foreground: 220 20% 30%;
+    --muted: 210 25% 92%;
+    --muted-foreground: 215 15% 52%;
+    --accent: 168 72% 40%;
     --accent-foreground: 0 0% 100%;
-    --destructive: 0 62.8% 40.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 204 15% 22%;
-    /* #222d34 */
-    --input: 204 15% 22%;
-    --ring: 167 100% 33%;
+    --destructive: 0 70% 55%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 214 25% 88%;
+    --input: 210 30% 94%;
+    --ring: 168 72% 40%;
   }
 }
 
 @layer base {
-  * {
-    @apply border-border;
-  }
+  * { @apply border-border box-border; }
+
+  html { color-scheme: light; }
 
   body {
-    @apply bg-background text-foreground antialiased selection:bg-primary/30;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    @apply bg-background text-foreground antialiased;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 }
 
-/* WhatsApp Specific Custom Utilities */
-.whatsapp-chat-pattern-dark {
-  background-color: #0b141a;
-  background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 0);
-  background-size: 24px 24px;
-}
+/* ══════════════════════════════════════════
+   LIQUID GLASS SYSTEM — Apple iOS 26 Style
+══════════════════════════════════════════ */
+@layer utilities {
 
-.whatsapp-chat-pattern-light {
-  background-color: #efeae2;
-  background-image: radial-gradient(rgba(0, 0, 0, 0.04) 1px, transparent 0);
-  background-size: 24px 24px;
-}
-
-/* Scrollbar Customization */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(140, 140, 140, 0.3);
-  border-radius: 9999px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(140, 140, 140, 0.5);
-}
-
-/* Audio Wave Animation */
-@keyframes pulse-wave {
-
-  0%,
-  100% {
-    transform: scaleY(0.4);
+  /* Base liquid glass — translucent white */
+  .liquid-glass {
+    background: rgba(255, 255, 255, 0.55);
+    backdrop-filter: blur(28px) saturate(200%) brightness(1.05);
+    -webkit-backdrop-filter: blur(28px) saturate(200%) brightness(1.05);
+    border: 1px solid rgba(255, 255, 255, 0.75);
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.9) inset,
+      0 8px 32px rgba(0, 0, 0, 0.08),
+      0 2px 8px rgba(0, 0, 0, 0.04);
   }
 
-  50% {
-    transform: scaleY(1);
+  /* Heavier glass for cards */
+  .liquid-glass-card {
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(40px) saturate(220%) brightness(1.08);
+    -webkit-backdrop-filter: blur(40px) saturate(220%) brightness(1.08);
+    border: 1px solid rgba(255, 255, 255, 0.85);
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.95) inset,
+      0 0 0 0.5px rgba(0, 0, 0, 0.06),
+      0 16px 48px rgba(0, 0, 0, 0.1),
+      0 4px 12px rgba(0, 0, 0, 0.06);
   }
+
+  /* Sidebar glass panel */
+  .liquid-glass-sidebar {
+    background: rgba(255, 255, 255, 0.68);
+    backdrop-filter: blur(36px) saturate(200%) brightness(1.06);
+    -webkit-backdrop-filter: blur(36px) saturate(200%) brightness(1.06);
+    border-right: 1px solid rgba(255, 255, 255, 0.7);
+    box-shadow: 1px 0 20px rgba(0, 0, 0, 0.05);
+  }
+
+  /* Thin glass — header, input bar */
+  .liquid-glass-thin {
+    background: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.6);
+  }
+
+  /* Input field glass */
+  .liquid-glass-input {
+    background: rgba(255, 255, 255, 0.65);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .liquid-glass-input:focus-within {
+    border-color: rgba(34, 197, 158, 0.5);
+    box-shadow: 0 0 0 3px rgba(34, 197, 158, 0.12), 0 1px 4px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  }
+
+  /* Tinted glass — green tint (sender bubble) */
+  .liquid-glass-teal {
+    background: rgba(20, 184, 166, 0.14);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(20, 184, 166, 0.25);
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.6) inset,
+      0 4px 16px rgba(20, 184, 166, 0.12);
+  }
+
+  /* Receiver bubble glass */
+  .liquid-glass-bubble {
+    background: rgba(255, 255, 255, 0.82);
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.07), 0 1px 0 rgba(255, 255, 255, 0.95) inset;
+  }
+
+  /* Nav rail active state */
+  .liquid-nav-active {
+    background: rgba(20, 184, 166, 0.12);
+    border: 1px solid rgba(20, 184, 166, 0.22);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 2px 10px rgba(20, 184, 166, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    color: #0d9488;
+  }
+
+  /* Chat background */
+  .chat-bg {
+    background-color: #f0f5ff;
+    background-image:
+      radial-gradient(ellipse at 15% 85%, rgba(20, 184, 166, 0.06) 0%, transparent 50%),
+      radial-gradient(ellipse at 85% 15%, rgba(99, 102, 241, 0.05) 0%, transparent 50%),
+      url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2399aac4' fill-opacity='0.05'%3E%3Cpath d='M0 0h40v40H0V0zm40 40h40v40H40V40zm0-40h2l-2 2V0zm0 4l4-4h2l-6 6V4zm0 4l8-8h2L40 10V8zm0 4L52 0h2L40 14v-2zm0 4L56 0h2L40 18v-2zm0 4L60 0h2L40 22v-2zm0 4L64 0h2L40 26v-2zm0 4L68 0h2L40 30v-2zm0 4L72 0h2L40 34v-2zm0 4L76 0h2L40 38v-2zm0 4L80 0v2L42 40h-2zm4 0L80 4v2L46 40h-2zm4 0L80 8v2L50 40h-2zm4 0L80 12v2L54 40h-2zm4 0L80 16v2L58 40h-2zm4 0L80 20v2L62 40h-2zm4 0L80 24v2L66 40h-2zm4 0L80 28v2L70 40h-2zm4 0L80 32v2L74 40h-2zm4 0L80 36v2L78 40h-2zm4 0L80 40L80 40z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  }
+
+  /* Auth background */
+  .auth-bg {
+    background: linear-gradient(135deg, #e8f5f0 0%, #f0f4ff 40%, #fdf0f8 100%);
+    background-attachment: fixed;
+  }
+
+  /* Gradient text */
+  .gradient-text {
+    background: linear-gradient(135deg, #0f766e, #14b8a6, #6366f1);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Gradient button */
+  .btn-liquid {
+    background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
+    color: #ffffff;
+    font-weight: 600;
+    border: none;
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.25) inset,
+      0 4px 16px rgba(20, 184, 166, 0.3),
+      0 2px 4px rgba(0, 0, 0, 0.08);
+    transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .btn-liquid:hover {
+    background: linear-gradient(135deg, #2dd4bf 0%, #14b8a6 100%);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.3) inset, 0 8px 24px rgba(20,184,166,0.35), 0 2px 4px rgba(0,0,0,0.1);
+    transform: translateY(-1px);
+  }
+  .btn-liquid:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.2) inset, 0 2px 8px rgba(20,184,166,0.2);
+  }
+
+  /* Chat item */
+  .chat-item-hover { transition: background 0.12s ease; }
+  .chat-item-hover:hover { background: rgba(20, 184, 166, 0.05); }
+  .chat-item-active { background: rgba(20, 184, 166, 0.09); border-right: 2px solid rgba(13, 148, 136, 0.6); }
+
+  /* Unread badge */
+  .badge-teal {
+    background: linear-gradient(135deg, #14b8a6, #0d9488);
+    color: white;
+    box-shadow: 0 2px 6px rgba(20,184,166,0.3);
+  }
+
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 }
 
-.animate-wave-bar {
-  animation: pulse-wave 1.2s ease-in-out infinite;
+/* ══════════════════════════════════════════
+   SCROLLBAR
+══════════════════════════════════════════ */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(20,184,166,0.2); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(20,184,166,0.4); }
+
+/* ══════════════════════════════════════════
+   ANIMATIONS
+══════════════════════════════════════════ */
+@keyframes msg-in-right {
+  from { opacity: 0; transform: translateX(14px) scale(0.95); }
+  to   { opacity: 1; transform: translateX(0)  scale(1); }
 }
+@keyframes msg-in-left {
+  from { opacity: 0; transform: translateX(-14px) scale(0.95); }
+  to   { opacity: 1; transform: translateX(0)   scale(1); }
+}
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes float {
+  0%,100% { transform: translateY(0); }
+  50%     { transform: translateY(-7px); }
+}
+@keyframes liquid-shimmer {
+  0%   { background-position: -400% 0; }
+  100% { background-position: 400% 0; }
+}
+@keyframes typing-bounce {
+  0%,60%,100% { transform: translateY(0);   opacity: 0.4; }
+  30%         { transform: translateY(-7px); opacity: 1; }
+}
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.9); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.animate-msg-in-right { animation: msg-in-right 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+.animate-msg-in-left  { animation: msg-in-left  0.22s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+.animate-fade-up      { animation: fade-up 0.3s ease-out forwards; }
+.animate-float        { animation: float 3.5s ease-in-out infinite; }
+.animate-scale-in     { animation: scale-in 0.2s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+
+/* Typing dots */
+.typing-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: #14b8a6;
+  animation: typing-bounce 1.4s ease-in-out infinite;
+}
+.typing-dot:nth-child(2) { animation-delay: 0.18s; }
+.typing-dot:nth-child(3) { animation-delay: 0.36s; }
+
+/* Skeleton shimmer */
+.shimmer {
+  background: linear-gradient(90deg, rgba(0,0,0,0.04) 25%, rgba(0,0,0,0.08) 37%, rgba(0,0,0,0.04) 63%);
+  background-size: 400% 100%;
+  animation: liquid-shimmer 1.4s ease infinite;
+}
+
+/* ══════════════════════════════════════════
+   LIQUID SPECULAR HIGHLIGHT (top-edge glow)
+══════════════════════════════════════════ */
+.liquid-glass::before,
+.liquid-glass-card::before,
+.liquid-glass-bubble::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 8%; right: 8%;
+  height: 1px;
+  border-radius: 50%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.9), transparent);
+  pointer-events: none;
+}
+.liquid-glass { position: relative; }
+.liquid-glass-card { position: relative; }
+.liquid-glass-bubble { position: relative; }

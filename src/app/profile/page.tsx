@@ -55,36 +55,26 @@ export default function ProfilePage() {
     }
   };
 
-  const uploadToCloudinary = async (file: File): Promise<string | null> => {
-    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-    const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
-
-    if (!cloudName || !uploadPreset) {
-      console.error("Cloudinary environment variables are not set.");
-      toast({
-        title: "Configuration Error",
-        description: "Image upload is not configured.",
-        variant: "destructive",
-      });
-      return null;
-    }
-
+  const uploadToGitHub = async (file: File): Promise<string | null> => {
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("upload_preset", uploadPreset);
 
     try {
-      const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+      const response = await fetch("/api/upload", {
         method: "POST",
         body: formData,
       });
 
-      if (!response.ok) throw new Error("Cloudinary upload failed");
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || "Image upload failed");
+      }
+
       const data = await response.json();
-      return data.secure_url;
+      return data.url;
 
     } catch (error) {
-      console.error("Error uploading to Cloudinary:", error);
+      console.error("Error uploading profile image:", error);
       toast({
         title: "Image Upload Failed",
         description: "Could not upload your profile picture.",
@@ -104,7 +94,7 @@ export default function ProfilePage() {
     let newAvatarUrl = user.avatar;
 
     if (avatarFile) {
-        const uploadedUrl = await uploadToCloudinary(avatarFile);
+        const uploadedUrl = await uploadToGitHub(avatarFile);
         if (uploadedUrl) {
             newAvatarUrl = uploadedUrl;
         } else {

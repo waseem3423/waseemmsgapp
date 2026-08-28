@@ -77,10 +77,12 @@ export default function MessageInput({
       // Start recording
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        const mimeType = MediaRecorder.isTypeSupported('audio/mp4') 
-          ? 'audio/mp4' 
-          : MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-          ? 'audio/webm;codecs=opus'
+        const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') 
+          ? 'audio/webm;codecs=opus' 
+          : MediaRecorder.isTypeSupported('audio/ogg;codecs=opus')
+          ? 'audio/ogg;codecs=opus'
+          : MediaRecorder.isTypeSupported('audio/mp4')
+          ? 'audio/mp4'
           : 'audio/webm';
         const mediaRecorder = new MediaRecorder(stream, { mimeType });
         mediaRecorderRef.current = mediaRecorder;
@@ -94,7 +96,8 @@ export default function MessageInput({
 
         mediaRecorder.onstop = () => {
           const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
-          const audioFile = new File([audioBlob], "voice_message.mp4", { type: mimeType });
+          const customVoiceName = `voice_${Date.now()}.wzm`;
+          const audioFile = new File([audioBlob], customVoiceName, { type: mimeType });
           onFileSelected(audioFile, 'audio');
           stream.getTracks().forEach(track => track.stop());
         };
@@ -112,10 +115,21 @@ export default function MessageInput({
     }
   };
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>, type: MessageType) => {
+  const detectFileType = (file: File): MessageType => {
+    const mime = file.type.toLowerCase();
+    const ext = file.name.split('.').pop()?.toLowerCase() || '';
+
+    if (mime.startsWith('image/')) return 'image';
+    if (mime.startsWith('video/') || ['mp4', 'webm', 'mkv', 'mov', 'avi', 'wmv', 'flv'].includes(ext)) return 'video';
+    if (mime.startsWith('audio/') || ['mp3', 'wav', 'ogg', 'opus', 'm4a', 'wzm', 'aac'].includes(ext)) return 'audio';
+    return 'document';
+  };
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      onFileSelected(file, type);
+      const detectedType = detectFileType(file);
+      onFileSelected(file, detectedType);
     }
     event.target.value = '';
   };
@@ -157,20 +171,20 @@ export default function MessageInput({
   };
 
   return (
-    <div className="p-3 bg-card border-t border-border/80 select-none">
+    <div className="p-3 border-t border-black/5 select-none liquid-glass-thin">
       <input 
         type="file" 
         ref={imageInputRef} 
         className="hidden" 
-        accept="image/*" 
-        onChange={(e) => handleFileSelect(e, 'image')} 
+        accept="image/*,video/*" 
+        onChange={handleFileSelect} 
       />
       <input 
         type="file" 
         ref={fileInputRef} 
         className="hidden" 
         accept="*" 
-        onChange={(e) => handleFileSelect(e, 'document')} 
+        onChange={handleFileSelect} 
       />
 
       {/* AI Smart Replies Pill Carousel */}
@@ -178,7 +192,7 @@ export default function MessageInput({
         <div className="mb-2.5 px-1">
           <ScrollArea className="w-full whitespace-nowrap">
             <div className="flex items-center gap-2 pb-1.5">
-              <div className="flex items-center gap-1 text-xs font-semibold text-primary bg-primary/10 px-2.5 py-1 rounded-full border border-primary/20">
+              <div className="flex items-center gap-1 text-xs font-semibold text-teal-700 bg-teal-50 px-2.5 py-1 rounded-full border border-teal-200">
                 <Zap className="h-3.5 w-3.5 fill-primary" />
                 <span>AI Quick Reply</span>
               </div>
@@ -193,7 +207,7 @@ export default function MessageInput({
                     key={index}
                     variant="secondary"
                     size="sm"
-                    className="rounded-full text-xs h-7 py-1 px-3 bg-secondary hover:bg-primary/20 hover:text-primary transition-colors border border-border/60"
+                    className="rounded-full text-xs h-7 py-1 px-3 bg-white/70 hover:bg-teal-50 hover:text-teal-700 transition-colors border border-black/8 shadow-sm"
                     onClick={() => handleSuggestionClick(suggestion)}
                   >
                     {suggestion}
@@ -207,9 +221,9 @@ export default function MessageInput({
 
       {/* WhatsApp Quoted Reply Preview Banner */}
       {replyingToMessage && (
-        <div className="mb-2 bg-secondary/90 rounded-xl p-2.5 flex items-center justify-between border-l-4 border-emerald-500 shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-150">
+        <div className="mb-2 rounded-xl p-2.5 flex items-center justify-between border-l-4 border-teal-400 shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-150 bg-white/70 backdrop-blur">
           <div className="flex flex-col min-w-0 pr-2">
-            <span className="text-xs font-bold text-emerald-500">Replying to message</span>
+            <span className="text-xs font-bold text-teal-600">Replying to message</span>
             <p className="text-xs text-muted-foreground truncate mt-0.5 font-medium">
               <AppleFormattedText text={replyingToMessage.content || (replyingToMessage.type === 'image' ? '📷 Photo' : replyingToMessage.type === 'audio' ? '🎵 Voice message' : '📄 Document')} emojiSize="sm" />
             </p>
@@ -230,7 +244,7 @@ export default function MessageInput({
       <form onSubmit={handleSubmit} className="flex items-center gap-2">
         <Popover>
           <PopoverTrigger asChild>
-            <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 text-muted-foreground hover:text-foreground shrink-0">
+            <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 text-slate-400 hover:text-teal-600 hover:bg-teal-50 shrink-0">
               <Smile className="h-5 w-5" />
             </Button>
           </PopoverTrigger>
@@ -259,7 +273,7 @@ export default function MessageInput({
         {/* Attachment Options Popover */}
         <Popover>
           <PopoverTrigger asChild>
-            <Button type="button" variant="ghost" size="icon" className="rounded-full h-9 w-9 text-muted-foreground hover:text-foreground shrink-0">
+            <Button type="button" variant="ghost" size="icon" className="rounded-full h-9 w-9 text-slate-400 hover:text-teal-600 hover:bg-teal-50 shrink-0">
               <Paperclip className="h-5 w-5" />
             </Button>
           </PopoverTrigger>
@@ -285,12 +299,33 @@ export default function MessageInput({
           </PopoverContent>
         </Popover>
 
-        {/* Input Bar or Voice Recording Indicator */}
+        {/* Input Bar or Voice Recording Live Waveform Indicator */}
         {isRecording ? (
-          <div className="flex-1 flex items-center gap-3 bg-red-500/10 text-red-500 rounded-full px-4 py-2 border border-red-500/20 animate-pulse">
-            <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
-            <span className="text-sm font-mono font-medium">{formatSeconds(recordingSeconds)}</span>
-            <span className="text-xs text-muted-foreground flex-1">Recording voice message...</span>
+          <div className="flex-1 flex items-center gap-3 bg-red-50 text-red-500 rounded-full px-4 py-1.5 border border-red-200 select-none shadow-sm">
+            <span className="h-3 w-3 rounded-full bg-red-500 animate-ping shrink-0" />
+            <span className="text-xs font-mono font-bold text-red-400 shrink-0">{formatSeconds(recordingSeconds)}</span>
+            <div className="flex-1 flex items-center gap-1 overflow-hidden h-4">
+              {[40, 70, 30, 90, 50, 100, 60, 30, 80, 50, 90, 40, 70, 100, 60, 40, 80].map((h, i) => (
+                <span 
+                  key={i} 
+                  className="w-0.5 bg-emerald-500 rounded-full animate-pulse" 
+                  style={{ height: `${h}%`, animationDuration: `${0.4 + (i % 5) * 0.2}s` }} 
+                />
+              ))}
+            </div>
+            <Button 
+              type="button" 
+              variant="ghost" 
+              size="icon" 
+              className="h-7 w-7 rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10" 
+              onClick={() => {
+                if (mediaRecorderRef.current) mediaRecorderRef.current.stop();
+                setIsRecording(false);
+              }}
+              title="Cancel Recording"
+            >
+              <X className="h-4 w-4" />
+            </Button>
           </div>
         ) : (
           <Input
@@ -298,13 +333,13 @@ export default function MessageInput({
             onChange={(e) => handleTextChange(e.target.value)}
             placeholder="Type a message"
             autoComplete="off"
-            className="flex-1 bg-secondary/80 hover:bg-secondary border-none rounded-full px-4 py-2 text-sm focus-visible:ring-1 focus-visible:ring-primary shadow-inner"
+            className="flex-1 rounded-full px-4 py-2 text-sm focus-visible:ring-1 focus-visible:ring-teal-400/50 shadow-sm bg-white/75 border border-white/85 hover:bg-white/90"
           />
         )}
 
         {/* Action Button: Send or Mic */}
         {text.trim() ? (
-          <Button type="submit" size="icon" className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full h-9 w-9 shrink-0 shadow-md transition-transform active:scale-95">
+          <Button type="submit" size="icon" className="rounded-full h-9 w-9 shrink-0 transition-transform active:scale-95 btn-liquid">
             <Send className="h-4.5 w-4.5" />
           </Button>
         ) : (
@@ -314,7 +349,7 @@ export default function MessageInput({
             onClick={handleMicClick} 
             className={cn(
               "rounded-full h-9 w-9 shrink-0 shadow-md transition-all active:scale-95",
-              isRecording ? "bg-red-500 hover:bg-red-600 text-white animate-bounce" : "bg-primary hover:bg-primary/90 text-primary-foreground"
+              isRecording ? "bg-red-500 hover:bg-red-600 text-white animate-bounce shadow-md" : "btn-liquid"
             )}
             title={isRecording ? "Stop & Send Voice Message" : "Record Voice Message"}
           >

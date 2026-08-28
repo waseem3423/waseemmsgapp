@@ -124,13 +124,27 @@ const ContactList = forwardRef<HTMLDivElement, ContactListProps>(({
     );
 
     let previewText = lastMessageText;
+
+    // Fix raw media URLs appearing in sidebar last message preview
+    if (previewText.startsWith('http://') || previewText.startsWith('https://') || previewText.startsWith('blob:')) {
+      if (previewText.includes('.wzm') || previewText.includes('.opus') || previewText.includes('.mp3') || previewText.includes('audio')) {
+        previewText = '🎤 Voice message';
+      } else if (previewText.includes('.mp4') || previewText.includes('.webm') || previewText.includes('.mov') || previewText.includes('.mkv') || previewText.includes('video')) {
+        previewText = '🎥 Video';
+      } else if (previewText.includes('.doc') || previewText.includes('.pdf') || previewText.includes('.zip') || previewText.includes('document')) {
+        previewText = '📄 Document';
+      } else {
+        previewText = '📷 Photo';
+      }
+    }
+
     const lastMsg = chat.messages?.[chat.messages.length - 1];
     if (lastMsg?.reactions && Object.keys(lastMsg.reactions).length > 0) {
       const reactionEntries = Object.entries(lastMsg.reactions);
       if (reactionEntries.length > 0) {
         const [emoji, userIds] = reactionEntries[0];
         const isSelf = userIds.includes(user?.id || '');
-        previewText = isSelf ? `You reacted ${emoji} to: "${lastMsg.content}"` : `Reacted ${emoji} to: "${lastMsg.content}"`;
+        previewText = isSelf ? `You reacted ${emoji} to: "${previewText}"` : `Reacted ${emoji} to: "${previewText}"`;
       }
     }
 
@@ -140,10 +154,10 @@ const ContactList = forwardRef<HTMLDivElement, ContactListProps>(({
                 <button
                     onClick={() => onSelectChat(chat.id)}
                     className={cn(
-                      "w-full flex items-center gap-3 px-3 py-3 text-left transition-colors relative border-b border-border/40 select-none",
+                      "w-full flex items-center gap-3 px-3.5 py-3 text-left transition-all relative border-b border-border/30 select-none",
                       selectedChatId === chat.id
-                          ? "bg-secondary/90 font-medium"
-                          : "hover:bg-secondary/40"
+                          ? "bg-primary/10 dark:bg-primary/20 font-semibold text-primary"
+                          : "hover:bg-muted/50"
                     )}
                 >
                     <div className="relative shrink-0">
@@ -257,18 +271,18 @@ const ContactList = forwardRef<HTMLDivElement, ContactListProps>(({
   };
 
   return (
-    <div className="h-full flex flex-col bg-card select-none" ref={ref}>
+    <div className="h-full flex flex-col select-none bg-transparent" ref={ref}>
       {filter === 'Archived' ? (
-        <header className="p-3 border-b flex items-center justify-start gap-4 min-h-[56px] bg-card">
+        <header className="p-3 border-b border-black/5 flex items-center justify-start gap-4 min-h-[56px] liquid-glass-thin">
           <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 text-muted-foreground hover:text-foreground" onClick={() => setFilter('All')}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <h2 className="text-base font-semibold">Archived Chats</h2>
         </header>
       ) : (
-        <header className="px-4 py-3 border-b border-border/80 flex items-center justify-between min-h-[56px] bg-card">
+        <header className="px-4 py-3 border-b border-black/5 flex items-center justify-between min-h-[56px] liquid-glass-thin">
           <div className="flex items-center gap-3">
-            <h1 className="text-xl font-bold tracking-tight text-foreground">WhatsApp</h1>
+            <h1 className="text-xl font-bold tracking-tight gradient-text">WhatsApp</h1>
           </div>
           
           <div className="flex items-center gap-1">
@@ -310,13 +324,13 @@ const ContactList = forwardRef<HTMLDivElement, ContactListProps>(({
 
       {/* Search Input & WhatsApp Style Filter Pills */}
       {filter !== 'Archived' && (
-        <div className="p-3 border-b border-border/60 space-y-2.5">
+        <div className="px-3 py-2.5 border-b border-black/5 space-y-2.5 bg-white/30">
           <div className="relative">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input 
               ref={searchInputRef}
               placeholder="Search or start a new chat" 
-              className="pl-9 bg-secondary/80 border-none rounded-full h-9 text-xs focus-visible:ring-1 focus-visible:ring-primary shadow-inner"
+              className="pl-9 rounded-full h-9 text-xs focus-visible:ring-1 focus-visible:ring-teal-400/50 border border-white/80 bg-white/75 shadow-sm"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -336,8 +350,8 @@ const ContactList = forwardRef<HTMLDivElement, ContactListProps>(({
                       className={cn(
                           "rounded-full h-7 py-1 px-3 text-xs font-medium transition-all whitespace-nowrap",
                           filter === f.id 
-                              ? "bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/30 font-semibold" 
-                              : "bg-secondary/60 text-muted-foreground hover:bg-secondary hover:text-foreground"
+                              ? "bg-teal-50 text-teal-700 border border-teal-200/80 font-semibold" 
+                              : "bg-white/50 text-slate-500 border border-black/5 hover:bg-teal-50 hover:text-teal-700"
                       )}
                   >
                       {f.label}
@@ -361,7 +375,7 @@ const ContactList = forwardRef<HTMLDivElement, ContactListProps>(({
                             <span className="font-semibold text-sm">Archived</span>
                         </div>
                         {archivedUnreadCount > 0 && (
-                            <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">{archivedUnreadCount}</span>
+                            <span className="text-xs font-bold text-white px-2 py-0.5 rounded-full badge-teal">{archivedUnreadCount}</span>
                         )}
                     </button>
                 </>
@@ -379,7 +393,7 @@ const ContactList = forwardRef<HTMLDivElement, ContactListProps>(({
                 <div className="p-3 space-y-3">
                   {[...Array(8)].map((_, i) => (
                     <div key={i} className="flex items-center gap-3">
-                      <Skeleton className="h-12 w-12 rounded-full" />
+                      <Skeleton className="h-12 w-12 rounded-full bg-slate-200" />
                       <div className="flex-1 space-y-2">
                         <Skeleton className="h-4 w-3/4" />
                         <Skeleton className="h-3 w-1/2" />

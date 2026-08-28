@@ -70,11 +70,11 @@ export default function CallView({ call, onHangup, onAnswer, onReject, localStre
     useEffect(() => {
         const updateRemoteStream = () => {
             if (remoteStream) {
-                if (remoteAudioRef.current && remoteAudioRef.current.srcObject !== remoteStream) {
+                if (!isVideoCall && remoteAudioRef.current && remoteAudioRef.current.srcObject !== remoteStream) {
                     remoteAudioRef.current.srcObject = remoteStream;
                     remoteAudioRef.current.play().catch(err => console.log("Audio autoplay error:", err));
                 }
-                if (remoteVideoRef.current && remoteVideoRef.current.srcObject !== remoteStream) {
+                if (isVideoCall && remoteVideoRef.current && remoteVideoRef.current.srcObject !== remoteStream) {
                     remoteVideoRef.current.srcObject = remoteStream;
                     remoteVideoRef.current.play().catch(err => console.log("Video autoplay error:", err));
                 }
@@ -87,7 +87,7 @@ export default function CallView({ call, onHangup, onAnswer, onReject, localStre
             remoteStream.onaddtrack = updateRemoteStream;
             remoteStream.onremovetrack = updateRemoteStream;
         }
-    }, [remoteStream, call.status]);
+    }, [remoteStream, call.status, isVideoCall]);
 
     useEffect(() => {
         if (localStream && localVideoRef.current) {
